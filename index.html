@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infinoz</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #000000;
+            color: #e0e0e0;
+            overflow-x: hidden;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        #hero-canvas, #firefly-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        #hero-canvas {
+            z-index: -1;
+        }
+
+        #firefly-canvas {
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        .section-container {
+            position: relative;
+            z-index: 10;
+            padding: 4rem 1rem;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+        }
+        
+        .content-card {
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(5px);
+            border-radius: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+            padding: 2rem;
+            transition: all 0.3s ease-in-out;
+        }
+        
+        .content-card:hover {
+            transform: translateY(-5px);
+            background: rgba(10, 10, 10, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .gradient-text {
+            background-image: linear-gradient(to right, #1a69c0, #00bba9, #f66c12);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .btn {
+            background-color: #1a1a1a;
+            border: 1px solid #333;
+            color: #fff;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .btn:hover {
+            background-color: #2b2b2b;
+            border-color: #555;
+            transform: translateY(-2px);
+        }
+
+        .header-btn {
+            background-color: #1a1a1a;
+            border: 1px solid #333;
+            transition: all 0.3s ease;
+        }
+
+        .header-btn:hover {
+            background-color: #2b2b2b;
+            border-color: #555;
+        }
+        
+        .logo {
+            filter: drop-shadow(0 0 5px rgba(255,255,255,0.2));
+            height: 2.5rem;
+            width: auto;
+        }
+        .typing-cursor {
+            font-weight: 700;
+            animation: blink-caret 0.75s step-end infinite;
+        }
+
+        @keyframes blink-caret {
+            from, to { border-color: transparent }
+            50% { border-color: white }
+        }
+        
+        .dev-journey-container {
+            position: relative;
+            width: 100%;
+            height: 80vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dev-journey-svg {
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .journey-path {
+            fill: none;
+            stroke: #4a4a4a;
+            stroke-width: 2;
+            stroke-linecap: round;
+        }
+
+        .journey-dot {
+            fill: #fff;
+            box-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px #1a69c0, 0 0 20px #1a69c0;
+            animation: glow 1.5s infinite alternate;
+        }
+        
+        @keyframes glow {
+            from { box-shadow: 0 0 5px #fff, 0 0 10px #fff; }
+            to { box-shadow: 0 0 10px #fff, 0 0 20px #fff, 0 0 30px #1a69c0, 0 0 40px #1a69c0; }
+        }
+
+        .journey-step {
+            position: absolute;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(8px);
+            padding: 1rem;
+            border-radius: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-width: 250px;
+            text-align: left;
+            transition: all 0.3s ease-in-out;
+        }
+
+        /* Reverted to a cleaner, more professional hover effect */
+        .journey-step:hover {
+            transform: translateY(-5px);
+            background: rgba(10, 10, 10, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+        }
+    </style>
+</head>
+<body class="bg-[#000000] text-gray-200">
+
+    <canvas id="hero-canvas"></canvas>
+    <canvas id="firefly-canvas"></canvas>
+
+    <!-- Header -->
+    <header class="fixed top-0 left-0 w-full z-50 transition-colors duration-300 backdrop-blur-sm">
+        <nav class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <img src="2.png" alt="Infinoz Logo" class="logo">
+            </div>
+            <div class="hidden md:flex items-center space-x-6 text-sm">
+                <a href="#hero" class="text-gray-300 hover:text-white transition-colors">Home</a>
+                <a href="#services" class="text-gray-300 hover:text-white transition-colors">Services</a>
+                <a href="#dev-journey" class="text-gray-300 hover:text-white transition-colors">Journey</a>
+                <a href="#about" class="text-gray-300 hover:text-white transition-colors">About Us</a>
+                <a href="#contacts" class="px-5 py-2 rounded-full header-btn">Contacts</a>
+            </div>
+            <!-- Mobile Menu Button -->
+            <button class="md:hidden text-xl text-white">
+                &#9776;
+            </button>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section id="hero" class="section-container justify-center">
+        <div class="text-center w-full max-w-4xl content-card">
+            <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-tight tracking-tight mb-4 text-white">
+                <span id="typed-text-1"></span>
+                <br>
+                <span id="typed-text-2" class="gradient-text"></span>
+            </h1>
+            <p class="text-sm sm:text-base lg:text-lg font-light max-w-xl mx-auto mb-2 text-gray-400">
+                Expedite Deals<br>
+                Draws Eyes
+            </p>
+            <p class="text-sm sm:text-base lg:text-lg font-light max-w-xl mx-auto mb-8 text-gray-400">
+                Infinoz is a forward-thinking software company specializing in AI solutions, custom app development, and end-to-end software services. We help businesses tackle complex tech challenges with smart, scalable, and efficient digital solutions.
+            </p>
+            <div class="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4">
+                <a href="#contact" class="px-6 py-3 rounded-full btn">
+                    Discuss With Us
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Services Section -->
+    <section id="services" class="section-container justify-center">
+        <div class="container mx-auto text-center w-full max-w-4xl">
+            <h2 class="text-3xl font-extrabold mb-4">OUR SERVICES</h2>
+            <p class="text-gray-400 max-w-2xl mx-auto mb-12">Infinoz is a forward-thinking software company specializing in AI solutions, custom app development, and end-to-end software services.</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="content-card text-left">
+                    <h3 class="text-xl font-bold mb-2">Web Development</h3>
+                    <p class="text-sm text-gray-400">Infinoz crafts AI-powered websites with React, Node.js, Python, Django, and WordPress. Our team delivers SEO-optimized, responsive solutions for e-commerce and healthcare, with robust APIs. Amplify your success with scalable web platforms. Contact Infinoz today!</p>
+                    <a href="#contact" class="inline-block mt-4 px-4 py-2 rounded-full text-sm btn">Build Your Website</a>
+                </div>
+                <div class="content-card text-left">
+                    <h3 class="text-xl font-bold mb-2">Apps Development</h3>
+                    <p class="text-sm text-gray-400">Infinoz develops AI-driven mobile apps with Flutter and React Native for healthcare and retail. Our team integrates ChatGPT and LangChain for smart features and app store launches. Transform your mobile strategy with seamless apps. Contact Infinoz today!</p>
+                    <a href="#contact" class="inline-block mt-4 px-4 py-2 rounded-full text-sm btn">Build Your Apps</a>
+                </div>
+                <div class="content-card text-left">
+                    <h3 class="text-xl font-bold mb-2">AI Agent Development</h3>
+                    <p class="text-sm text-gray-400">Infinoz creates AI agents with ChatGPT, LangChain, and Vapi for e-commerce and healthcare. Our team builds voice-enabled, automated solutions with n8n for seamless workflows. Power your business with intelligent agents. Contact Infinoz today!</p>
+                    <a href="#contact" class="inline-block mt-4 px-4 py-2 rounded-full text-sm btn">Build AI Agent</a>
+                </div>
+                <div class="content-card text-left">
+                    <h3 class="text-xl font-bold mb-2">AI Chatbot Development</h3>
+                    <p class="text-sm text-gray-400">Infinoz builds AI conversational chatbots using ChatGPT, LangChain, and n8n for e-commerce and healthcare. Our team ensures seamless CRM integration and multilingual support. Enhance customer engagement with smart chatbots. Contact Infinoz today!</p>
+                    <a href="#contact" class="inline-block mt-4 px-4 py-2 rounded-full text-sm btn">Build AI Chatbot</a>
+                </div>
+                <div class="content-card text-left">
+                    <h3 class="text-xl font-bold mb-2">Devops Development</h3>
+                    <p class="text-sm text-gray-400">Infinoz develops AI-driven mobile apps with Flutter and React Native for healthcare and retail. Our team integrates ChatGPT and LangChain for smart features and app store launches. Transform your mobile strategy with seamless apps. Contact Infinoz today!</p>
+                    <a href="#contact" class="inline-block mt-4 px-4 py-2 rounded-full text-sm btn">Build Today</a>
+                </div>
+                <div class="content-card text-left">
+                    <h3 class="text-xl font-bold mb-2">UI/UX Design</h3>
+                    <p class="text-sm text-gray-400">Infinoz designs intuitive UI/UX with Figma and TailwindCSS for web and mobile apps in e-commerce and finance. Our team creates responsive, AI-driven interfaces for user engagement. Elevate your brand with sleek designs. Contact Infinoz today!</p>
+                    <a href="#contact" class="inline-block mt-4 px-4 py-2 rounded-full text-sm btn">Build Today</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Development Journey Section -->
+    <section id="dev-journey" class="section-container flex-col justify-center text-center">
+        <h2 class="text-3xl font-extrabold mb-24 mx-auto w-full">THE DEVELOPMENT JOURNEY</h2>
+        <div class="dev-journey-container mx-auto">
+            <svg id="journey-svg" class="dev-journey-svg" viewBox="0 0 1000 600" xmlns="http://www.w3.org/2000/svg">
+                <!-- Main central path (trunk) with natural sway -->
+                <path id="path-main" d="M 500 550 C 480 450, 520 250, 500 100" class="journey-path" />
+
+                <!-- Left branch path -->
+                <path id="path-branch1" d="M 490 350 C 350 300, 200 250, 150 150" class="journey-path" />
+
+                <!-- Right branch path -->
+                <path id="path-branch2" d="M 510 350 C 650 300, 800 250, 850 150" class="journey-path" />
+                
+                <!-- Dot animations with slowed down speed at the end -->
+                <circle cx="0" cy="0" r="8" class="journey-dot">
+                    <animateMotion dur="6s" repeatCount="indefinite" begin="0s" calcMode="spline" keySplines="0.42 0 0.58 1">
+                        <mpath xlink:href="#path-main" />
+                    </animateMotion>
+                </circle>
+                <circle cx="0" cy="0" r="8" class="journey-dot">
+                    <animateMotion dur="6s" repeatCount="indefinite" begin="2s" calcMode="spline" keySplines="0.42 0 0.58 1">
+                        <mpath xlink:href="#path-branch1" />
+                    </animateMotion>
+                </circle>
+                <circle cx="0" cy="0" r="8" class="journey-dot">
+                    <animateMotion dur="6s" repeatCount="indefinite" begin="4s" calcMode="spline" keySplines="0.42 0 0.58 1">
+                        <mpath xlink:href="#path-branch2" />
+                    </animateMotion>
+                </circle>
+            </svg>
+            <!-- Content blocks positioned relative to the SVG -->
+            <div class="journey-step" style="position: absolute; top: calc(100px - 1rem); left: 50%; transform: translateX(-50%) translateY(-100%);">
+                <h3 class="text-xl font-bold mb-2">Strategy</h3>
+                <p class="text-sm text-gray-400">We begin by understanding your vision to craft a tailored strategy that aligns with your business goals.</p>
+            </div>
+
+            <div class="journey-step" style="position: absolute; top: calc(150px - 1rem); left: 150px; transform: translateX(-50%) translateY(-100%);">
+                <h3 class="text-xl font-bold mb-2">Design</h3>
+                <p class="text-sm text-gray-400">Our team creates intuitive and engaging UI/UX designs, ensuring a seamless user experience for your audience.</p>
+            </div>
+
+            <div class="journey-step" style="position: absolute; top: calc(150px - 1rem); left: 850px; transform: translateX(-50%) translateY(-100%);">
+                <h3 class="text-xl font-bold mb-2">Execution</h3>
+                <p class="text-sm text-gray-400">We build robust and scalable solutions using cutting-edge technologies, ensuring your project is delivered on time.</p>
+            </div>
+            
+            <div class="journey-step" style="position: absolute; top: calc(550px - 1rem); left: 50%; transform: translateX(-50%) translateY(-100%);">
+                <h3 class="text-xl font-bold mb-2">Support</h3>
+                <p class="text-sm text-gray-400">Our partnership doesn't end at launch. We provide ongoing support and maintenance to ensure your solution remains secure.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Us Section -->
+    <section id="about" class="section-container justify-center">
+        <div class="container mx-auto text-center w-full max-w-4xl">
+            <h2 class="text-3xl font-extrabold mb-4">About Infinoz</h2>
+            <p class="text-gray-400 text-sm md:text-base leading-relaxed content-card">
+                Infinoz is a forward-thinking technology company committed to redefining industry standards through innovation. Our team of experts pioneers advanced solutions that empower businesses to thrive in a rapidly evolving digital landscape. We believe in building a future where technology is a force for positive transformation and growth.
+            </p>
+        </div>
+    </section>
+
+    <!-- Projects Section -->
+    <section id="projects" class="section-container justify-center">
+        <div class="container mx-auto text-center w-full max-w-4xl">
+            <h2 class="text-3xl font-extrabold mb-4">INTRODUCE OUR PROJECTS</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="content-card text-center">
+                    <p class="text-sm text-gray-400">Live here</p>
+                </div>
+                <div class="content-card text-center">
+                    <p class="text-sm text-gray-400">Live here</p>
+                </div>
+                <div class="content-card text-center">
+                    <p class="text-sm text-gray-400">Live here</p>
+                </div>
+                <div class="content-card text-center">
+                    <p class="text-sm text-gray-400">Live here</p>
+                </div>
+                <div class="content-card text-center">
+                    <p class="text-sm text-gray-400">Live here</p>
+                </div>
+                <div class="content-card text-center">
+                    <p class="text-sm text-gray-400">Live here</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section id="testimonials" class="section-container justify-center">
+        <div class="container mx-auto text-center w-full max-w-4xl">
+            <h2 class="text-3xl font-extrabold mb-4">We are Trusted</h2>
+            <p class="text-gray-400 mb-8">13+ Countries Worldwide</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="content-card text-left">
+                    <p class="text-sm italic text-gray-300">"Very well thought out and articulate communication. Clear milestones, deadlines and fast work. Patience. Infinite patience. No shortcuts. Even if the client is being careless. The best part...always solving problems with great original ideas!."</p>
+                    <p class="text-xs text-gray-400 mt-4"><b>Moonkle LTD,</b><br>Client of Company</p>
+                </div>
+                <div class="content-card text-left">
+                    <p class="text-sm italic text-gray-300">"Patience. Infinite patience. No shortcuts. Very well thought out and articulate communication. Clear milestones, deadlines and fast work. Even if the client is being careless. The best part...always solving problems with great original ideas!."</p>
+                    <p class="text-xs text-gray-400 mt-4"><b>SoftTech,</b><br>Manager of Company</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section id="stats" class="section-container justify-center">
+        <div class="container mx-auto text-center w-full max-w-4xl">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+                <div class="content-card">
+                    <h3 class="text-4xl font-extrabold gradient-text">21 +</h3>
+                    <p class="text-sm text-gray-400">active Clients</p>
+                </div>
+                <div class="content-card">
+                    <h3 class="text-4xl font-extrabold gradient-text">31 +</h3>
+                    <p class="text-sm text-gray-400">projects done</p>
+                </div>
+                <div class="content-card">
+                    <h3 class="text-4xl font-extrabold gradient-text">9 +</h3>
+                    <p class="text-sm text-gray-400">team advisors</p>
+                </div>
+                <div class="content-card">
+                    <h3 class="text-4xl font-extrabold gradient-text">2 +</h3>
+                    <p class="text-sm text-gray-400">Glorious Years</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Final CTA Section -->
+    <section id="cta" class="section-container justify-center">
+        <div class="container mx-auto text-center w-full max-w-4xl content-card">
+            <h2 class="text-3xl font-extrabold mb-4">NEED A CONSULTATION ?</h2>
+            <p class="text-gray-400 max-w-2xl mx-auto mb-8">Have Any Questions? Free Quote</p>
+            <a href="#contacts" class="px-6 py-3 rounded-full btn">
+                Contact Us
+            </a>
+        </div>
+    </section>
+
+    <!-- Contacts Section -->
+    <section id="contacts" class="section-container justify-center">
+        <div class="container mx-auto text-center w-full max-w-4xl">
+            <h2 class="text-3xl font-extrabold mb-4">Contacts</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="content-card text-left">
+                    <h3 class="text-xl font-bold mb-2">Location</h3>
+                    <p class="text-sm text-gray-400 mb-4">266/3/D, Ishakha Road, Ansarcamp, Mirpur 1 Dhaka, Bangladesh.</p>
+                    <h3 class="text-xl font-bold mb-2">Email</h3>
+                    <p class="text-sm text-gray-400 mb-4">hello@infinoz.com</p>
+                    <h3 class="text-xl font-bold mb-2">Phone</h3>
+                    <p class="text-sm text-gray-400">+88013-3263591</p>
+                    <p class="text-sm text-gray-400">+8801603741227</p>
+                </div>
+                <div class="content-card text-left">
+                    <h3 class="text-xl font-bold mb-4">Find us on social media</h3>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors">Facebook-f</a>
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors">Linkedin</a>
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors">X-twitter</a>
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors">Whatsapp</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Footer -->
+    <footer class="mt-8 py-4">
+        <div class="container mx-auto px-4 flex flex-col md:flex-row justify-between items-center text-xs text-gray-400">
+            <div class="mb-2 md:mb-0">
+                <span>© 2025 Infinoz Inc.</span>
+            </div>
+            <div class="flex flex-col md:flex-row md:space-x-8 space-y-4 md:space-y-0 text-center md:text-left">
+                <div>
+                    <h4 class="font-bold text-sm text-white mb-2">Support</h4>
+                    <ul class="space-y-1">
+                        <li><a href="#" class="hover:text-white">About company</a></li>
+                        <li><a href="#" class="hover:text-white">Career</a></li>
+                        <li><a href="#" class="hover:text-white">Contacts</a></li>
+                        <li><a href="#" class="hover:text-white">Transparency report</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold text-sm text-white mb-2">Company</h4>
+                    <ul class="space-y-1">
+                        <li><a href="#" class="hover:text-white">About company</a></li>
+                        <li><a href="#" class="hover:text-white">Career</a></li>
+                        <li><a href="#" class="hover:text-white">Contacts</a></li>
+                        <li><a href="#" class="hover:text-white">Privacy Policy</a></li>
+                        <li><a href="#" class="hover:text-white">Terms of Use</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold text-sm text-white mb-2">Solutions</h4>
+                    <ul class="space-y-1">
+                        <li><a href="#" class="hover:text-white">Product comparison</a></li>
+                        <li><a href="#" class="hover:text-white">Prime</a></li>
+                        <li><a href="#" class="hover:text-white">Internet Secu</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+
+    <script>
+        // Use a self-invoking function to avoid polluting the global scope
+        (function() {
+            // Check for WebGL compatibility
+            if (!window.WebGLRenderingContext) {
+                console.error("This application requires a WebGL-enabled browser.");
+                return;
+            }
+
+            const vertexShader = `
+                varying vec2 vUv;
+                void main() {
+                    vUv = uv;
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                }
+            `;
+
+            const fragmentShader = `
+                precision highp float;
+                uniform float uTime;
+                uniform vec2 uResolution;
+                uniform vec2 uMouse;
+                varying vec2 vUv;
+
+                // Function to create a hash from a 2D vector for pseudo-random numbers
+                float hash(vec2 p) {
+                    return fract(sin(dot(p, vec2(41.41, 289.8))) * 43758.5453);
+                }
+
+                // Generates a simple noise pattern
+                float noise(vec2 p) {
+                    vec2 i = floor(p);
+                    vec2 f = fract(p);
+                    vec2 u = f*f*(3.0-2.0*f);
+                    return mix(mix(hash(i + vec2(0.0, 0.0)), hash(i + vec2(1.0, 0.0)), u.x),
+                                     mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y);
+                }
+
+                // Fractal Brownian Motion (fBm) for organic, cloud-like patterns
+                float fbm(vec2 p) {
+                    float value = 0.0;
+                    float amplitude = 0.5;
+                    float frequency = 2.0;
+                    for(int i = 0; i < 4; ++i) {
+                        value += amplitude * noise(p);
+                        p *= frequency;
+                        amplitude *= 0.5;
+                    }
+                    return value;
+                }
+                
+                void main() {
+                    vec2 uv = (vUv - 0.5) * uResolution.y / uResolution.x;
+                    vec2 mouseUv = (uMouse / uResolution - 0.5) * uResolution.y / uResolution.x;
+                    
+                    float mouseDist = length(uv - mouseUv) * 2.0;
+                    float mouseEffect = 1.0 - smoothstep(0.0, 0.4, mouseDist);
+                    float rippleStrength = 0.05;
+                    float ripple = sin(mouseDist * 1.0 - uTime * 2.0) * (1.0 - smoothstep(0.0, 0.4, mouseDist)) * rippleStrength;
+                    vec2 distortedUv = uv + normalize(uv - mouseUv) * ripple;
+
+                    float t = uTime * 0.1;
+                    
+                    float effect = 0.0;
+                    float offset = sin(distortedUv.y * 5.0 + t * 0.5) * 0.2;
+                    float angle = atan(distortedUv.y, distortedUv.x + offset) * 1.0;
+                    
+                    for (int i = 0; i < 4; i++) {
+                        float dist = length(distortedUv - vec2(0.0));
+                        float pulse = sin((dist * 50.0 + t * 1.5) + float(i) * 0.5) * 0.5 + 0.5;
+                        float wave = sin(distortedUv.x * 20.0 + t + float(i)) * 0.1;
+
+                        float lineThickness = 0.005;
+                        float brightness = 1.0 - smoothstep(0.0, lineThickness, abs(dist - wave) * 2.0);
+
+                        effect += brightness * pulse * (1.0 - abs(sin(angle * 1.5 + float(i) * 0.2)));
+                    }
+
+                    // Multi-layered noise for more organic flow
+                    float noise1 = fbm(distortedUv * 1.5 + t);
+                    float noise2 = fbm(distortedUv * 3.0 - t * 0.5);
+                    float combinedNoise = noise1 + noise2;
+
+                    float noiseEffect = 1.0 - smoothstep(0.0, 0.1, abs(combinedNoise - 0.5));
+                    float combinedEffect = effect + noiseEffect * 0.5;
+
+                    vec3 finalColor = vec3(0.0);
+                    
+                    // Richer color palette based on effect value
+                    vec3 logoBlue = vec3(26.0/255.0, 105.0/255.0, 192.0/255.0);
+                    vec3 logoGreen = vec3(0.0/255.0, 187.0/255.0, 169.0/255.0);
+                    vec3 logoOrange = vec3(246.0/255.0, 108.0/255.0, 18.0/255.0);
+                    vec3 darkBg = vec3(0.0);
+
+                    // Interpolate between the logo colors and the background based on the effect
+                    finalColor = mix(darkBg, logoBlue, combinedEffect * 0.6);
+                    finalColor = mix(finalColor, logoGreen, combinedEffect * 0.5);
+                    finalColor = mix(finalColor, logoOrange, combinedEffect * 0.4);
+
+                    // Add a subtle white glow for highlights
+                    finalColor = mix(finalColor, vec3(1.0), pow(combinedEffect, 10.0));
+
+                    // Add subtle mouse glow
+                    float mouseGlowDist = length(uv - mouseUv) * 2.0;
+                    float mouseGlow = 1.0 - smoothstep(0.0, 0.4, mouseGlowDist);
+                    mouseGlow *= mouseGlow;
+                    finalColor = mix(finalColor, vec3(1.0), mouseGlow * 0.2);
+                    
+                    gl_FragColor = vec4(finalColor, 1.0);
+                }
+            `;
+
+            let canvas, scene, camera, renderer, clock, uniforms, plane;
+
+            const init = () => {
+                canvas = document.getElementById('hero-canvas');
+                
+                scene = new THREE.Scene();
+                camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 10);
+                camera.position.z = 1;
+
+                renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: false });
+                renderer.setPixelRatio(window.devicePixelRatio);
+
+                uniforms = {
+                    uTime: { value: 0.0 },
+                    uResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+                    uMouse: { value: new THREE.Vector2(0, 0) }
+                };
+
+                onWindowResize();
+
+                const material = new THREE.ShaderMaterial({
+                    uniforms: uniforms,
+                    vertexShader: vertexShader,
+                    fragmentShader: fragmentShader
+                });
+
+                const geometry = new THREE.PlaneGeometry(2, 2);
+                plane = new THREE.Mesh(geometry, material);
+                scene.add(plane);
+
+                clock = new THREE.Clock();
+
+                const handleMouseMove = (e) => {
+                    uniforms.uMouse.value.x = e.clientX;
+                    uniforms.uMouse.value.y = window.innerHeight - e.clientY;
+                }
+                
+                document.addEventListener('mousemove', handleMouseMove);
+                document.addEventListener('touchmove', (e) => {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    handleMouseMove({ clientX: touch.clientX, clientY: touch.clientY });
+                }, { passive: false });
+
+                animate();
+            };
+
+            const animate = () => {
+                requestAnimationFrame(animate);
+
+                uniforms.uTime.value = clock.getElapsedTime();
+                renderer.render(scene, camera);
+            };
+
+            const onWindowResize = () => {
+                if (uniforms) {
+                    const width = window.innerWidth;
+                    const height = window.innerHeight;
+                    renderer.setSize(width, height);
+                    uniforms.uResolution.value.set(width, height);
+                }
+            };
+
+            window.addEventListener('resize', onWindowResize);
+            window.addEventListener('load', () => {
+                init();
+                startTypingEffect();
+                initFireflies();
+            });
+
+            // Typing effect logic
+            const typedText1 = document.getElementById('typed-text-1');
+            const typedText2 = document.getElementById('typed-text-2');
+            const text1 = "AI Integrated Tech";
+            const text2 = "Solutions That Propel Business";
+            let i = 0;
+            let j = 0;
+            let isTyping = false;
+
+            function typeWriter() {
+                if (!isTyping) return;
+
+                if (i < text1.length) {
+                    typedText1.textContent += text1.charAt(i);
+                    i++;
+                    setTimeout(typeWriter, 100);
+                } else if (j < text2.length) {
+                    // Start typing the second line
+                    if (j === 0) {
+                        typedText1.classList.remove('typing-cursor');
+                        typedText2.classList.add('typing-cursor');
+                    }
+                    typedText2.textContent += text2.charAt(j);
+                    j++;
+                    setTimeout(typeWriter, 80);
+                } else {
+                    typedText2.classList.remove('typing-cursor');
+                }
+            }
+            
+            function startTypingEffect() {
+                isTyping = true;
+                typedText1.classList.add('typing-cursor');
+                typeWriter();
+            }
+
+            // Firefly animation logic
+            const fireflyCanvas = document.getElementById('firefly-canvas');
+            const ctx = fireflyCanvas.getContext('2d');
+            const fireflies = [];
+            const numFireflies = 20;
+
+            class Firefly {
+                constructor() {
+                    this.x = Math.random() * fireflyCanvas.width;
+                    this.y = Math.random() * fireflyCanvas.height;
+                    this.size = Math.random() * 1.5 + 1;
+                    this.vx = Math.random() * 0.2 - 0.1;
+                    this.vy = Math.random() * 0.2 - 0.1;
+                    this.opacity = 0;
+                    this.fadeSpeed = 0.005;
+                    this.isFadingIn = true;
+                }
+
+                update() {
+                    this.x += this.vx;
+                    this.y += this.vy;
+
+                    // Bounce off edges
+                    if (this.x < 0 || this.x > fireflyCanvas.width) this.vx *= -1;
+                    if (this.y < 0 || this.y > fireflyCanvas.height) this.vy *= -1;
+
+                    // Fade in and out
+                    if (this.isFadingIn) {
+                        this.opacity += this.fadeSpeed;
+                        if (this.opacity >= 1) {
+                            this.isFadingIn = false;
+                        }
+                    } else {
+                        this.opacity -= this.fadeSpeed;
+                        if (this.opacity <= 0) {
+                            this.isFadingIn = true;
+                            // Reset position to simulate new firefly
+                            this.x = Math.random() * fireflyCanvas.width;
+                            this.y = Math.random() * fireflyCanvas.height;
+                        }
+                    }
+                }
+
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`;
+                    ctx.shadowColor = `rgba(255, 255, 255, ${this.opacity})`;
+                    ctx.shadowBlur = 10;
+                    ctx.fill();
+                    ctx.shadowBlur = 0; // Reset shadow for next draw
+                }
+            }
+
+            function initFireflies() {
+                fireflyCanvas.width = window.innerWidth;
+                fireflyCanvas.height = window.innerHeight;
+                for (let i = 0; i < numFireflies; i++) {
+                    fireflies.push(new Firefly());
+                }
+                animateFireflies();
+            }
+
+            function animateFireflies() {
+                ctx.clearRect(0, 0, fireflyCanvas.width, fireflyCanvas.height);
+                for (const firefly of fireflies) {
+                    firefly.update();
+                    firefly.draw();
+                }
+                requestAnimationFrame(animateFireflies);
+            }
+
+            window.addEventListener('resize', () => {
+                fireflyCanvas.width = window.innerWidth;
+                fireflyCanvas.height = window.innerHeight;
+            });
+
+        })();
+    </script>
+</body>
+</html>
